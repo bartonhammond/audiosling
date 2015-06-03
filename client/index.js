@@ -4,6 +4,28 @@ var audioContext;
 var audioRecorder;
 var _realAudioInput;
 
+var BinaryFileReader = {
+  read: function(file, callback){
+    var reader = new FileReader;
+
+    var fileInfo = {
+      name: file.name,
+      type: file.type,
+      size: file.size,
+      file: null
+    }
+
+    reader.onload = function(){
+      fileInfo.file = new Uint8Array(reader.result);
+      callback(null, fileInfo);
+    }
+    reader.onerror = function(){
+      callback(reader.error);
+    }
+
+    reader.readAsArrayBuffer(file);
+  }
+}
 
 function handlerStartUserMedia(stream) {
 
@@ -14,11 +36,14 @@ function handlerStartUserMedia(stream) {
   _realAudioInput = audioContext.createMediaStreamSource(stream);
 
   audioRecorder = new Recorder(_realAudioInput, function(blob) {
-    console.log('blob completed' + blob.size + ' ' + blob.type);
-    myAudioUploader.send(blob, function (error, downloadUrl) {
-      if (!error) {
-        Meteor.users.update(Meteor.userId(), {$set: {"profile.audio": {'name': 'audio', 'url': downloadUrl}}});
-      }
+    BinaryFileReader.read(blob, function(err, fileInfo){
+      var audio = {
+        blob: fileInfo,
+        blobURL: window.URL.createObjectURL(blob),
+        submitted: new Date(),
+        mp3: ''
+      };
+      Audios.insert(audio);
     });
 
   });
@@ -71,16 +96,24 @@ Template.recordingButtons.events({
       return;
     audioRecorder && audioRecorder.stop();
     //GUI - setup reactive in Session so buttons work together
+  },
+  'click #saveAudio': function(e, tmpl) {
+    var _self = this;
+    var blob = new Blob([_self.blob.file],{type: _self.blob.type});
+    var _id = _self._id;
+    myAudioUploader.send(blob, function (error, downloadUrl) {
+      if (!error) {
+        Audios.update({_id: _id}, 
+          {$set:
+           { url: downloadUrl }
+          });
+      }//error
+    });
   }
 });
 Template.recordingButtons.helpers({
-  audio: function() {
-    var user = Meteor.users.findOne(Meteor.userId());
-    if (user && user.profile && user.profile.audio) {
-      return user.profile.audio.url;
-    } else {
-      return undefined;
-    }
+  audios: function() {
+    return Audios.find();
   }
 });
 Template.slingshotForm.events({

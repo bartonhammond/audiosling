@@ -32,9 +32,15 @@
   <button  id="startRecordingBtn">Record</button>
   <button  id="stopRecordingBtn">Stop</button>
   <hr/>
-  {{#if audio}}
-     <p>Current audio: <audio src="{{audio}}" controls></audio></p>
-  {{/if}}
+  {{#each audios}}
+  <p>Current audio:
+    <audio src="{{blobURL}}" type="audio/mp3"  controls></audio>
+  </p>
+  <button id="saveAudio">Save audio</button>
+  <p>Saved audio:
+    <audio src="{{url}}" type="audio/mp3" controls></audio>
+  </p>
+  {{/each}}
 </template>
 
 <template name="slingshotForm">

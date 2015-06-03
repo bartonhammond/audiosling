@@ -45,7 +45,7 @@ Slingshot.createDirective("myAudioUploads", Slingshot.S3Storage, {
 
   key: function (file) {
     //Store file into a directory by the user's id
-    return this.userId + "/audio.mp3";
+    return this.userId + "/" + generateUUID() + "/audio.mp3";
   }
 });
 

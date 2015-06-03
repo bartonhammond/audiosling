@@ -1,0 +1,1 @@
+Audios = new Meteor.Collection();
